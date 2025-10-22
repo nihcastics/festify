@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'export', // 🔥 enables static HTML export to 'out' folder
+  // 🔥 Remove output: 'export' for dynamic pages
   typescript: {
     ignoreBuildErrors: true,
   },
