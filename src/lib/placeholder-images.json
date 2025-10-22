@@ -1,0 +1,178 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-1",
+      "description": "A vibrant music festival at night.",
+      "imageUrl": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bXVzaWMlMjBmZXN0aXZhbHxlbnwwfHx8fDE3NjA5NzEwNTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "music festival"
+    },
+    {
+      "id": "hero-2",
+      "description": "A large crowd at a tech conference.",
+      "imageUrl": "https://images.unsplash.com/photo-1560439514-4e9645039924?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx0ZWNoJTIwY29uZmVyZW5jZXxlbnwwfHx8fDE3NjA5OTk0NzJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "tech conference"
+    },
+    {
+      "id": "hero-3",
+      "description": "People celebrating a cultural festival with colorful powders.",
+      "imageUrl": "https://images.unsplash.com/photo-1722489399551-2acbd1bf83a4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjdWx0dXJhbCUyMGZlc3RpdmFsfGVufDB8fHx8MTc2MDkzMTE5MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cultural festival"
+    },
+    {
+      "id": "tech-event-1",
+      "description": "A person coding on a laptop at a hackathon.",
+      "imageUrl": "https://images.unsplash.com/photo-1638202677704-b74690bb8fa9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjb2RpbmclMjBoYWNrYXRob258ZW58MHx8fHwxNzYxMDU0OTgxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "coding hackathon"
+    },
+    {
+      "id": "tech-event-2",
+      "description": "A speaker presenting on a stage at a tech talk.",
+      "imageUrl": "https://images.unsplash.com/photo-1477038208128-795a32677acd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx0ZWNoJTIwcHJlc2VudGF0aW9ufGVufDB8fHx8MTc2MDkzMjA0NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "tech presentation"
+    },
+    {
+      "id": "cultural-event-1",
+      "description": "Traditional dancers in colorful costumes.",
+      "imageUrl": "https://images.unsplash.com/photo-1741376478051-f2d9b3c88007?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8dHJhZGl0aW9uYWwlMjBkYW5jZXxlbnwwfHx8fDE3NjEwNTQ5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "traditional dance"
+    },
+    {
+      "id": "cultural-event-2",
+      "description": "A food festival stall with various dishes.",
+      "imageUrl": "https://images.unsplash.com/photo-1532634922-8fe0b757fb13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxmb29kJTIwZmVzdGl2YWx8ZW58MHx8fHwxNzYwOTgxNTk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "food festival"
+    },
+    {
+      "id": "sports-event-1",
+      "description": "A basketball game in a college gymnasium.",
+      "imageUrl": "https://images.unsplash.com/photo-1583079806406-91731880e785?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxiYXNrZXRiYWxsJTIwZ2FtZXxlbnwwfHx8fDE3NjA5OTIxOTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "basketball game"
+    },
+    {
+      "id": "sports-event-2",
+      "description": "Runners at the starting line of a marathon.",
+      "imageUrl": "https://images.unsplash.com/photo-1708352012130-2cb43e2c8327?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxtYXJhdGhvbiUyMHJ1bm5pbmd8ZW58MHx8fHwxNzYxMDI4ODYzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "marathon running"
+    },
+    {
+      "id": "partner-1",
+      "description": "Logo for a university partner.",
+      "imageUrl": "https://images.unsplash.com/photo-1637389426433-434edb8ee0f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx1bml2ZXJzaXR5JTIwbG9nb3xlbnwwfHx8fDE3NjEwMjAzMzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "university logo"
+    },
+    {
+      "id": "partner-2",
+      "description": "Logo for a tech club partner.",
+      "imageUrl": "https://images.unsplash.com/photo-1704089272382-201cf5c1bbbb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx0ZWNoJTIwbG9nb3xlbnwwfHx8fDE3NjA5MzQ2NTN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "tech logo"
+    },
+    {
+      "id": "partner-3",
+      "description": "Logo for a sports brand sponsor.",
+      "imageUrl": "https://images.unsplash.com/photo-1614036387281-6ec2ad20a05a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzcG9ydHMlMjBicmFuZHxlbnwwfHx8fDE3NjEwNTQ5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sports brand"
+    },
+    {
+      "id": "partner-4",
+      "description": "Logo for a cultural organization.",
+      "imageUrl": "https://images.unsplash.com/photo-1676970121758-7970d31e4c01?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjdWx0dXJhbCUyMGxvZ298ZW58MHx8fHwxNzYxMDU0OTgyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cultural logo"
+    },
+    {
+      "id": "partner-5",
+      "description": "Logo for another partner.",
+      "imageUrl": "https://images.unsplash.com/photo-1562783912-21ad31ee2a83?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjb21wYW55JTIwbG9nb3xlbnwwfHx8fDE3NjEwMjIyOTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "company logo"
+    },
+    {
+      "id": "tech-event-3",
+      "description": "A fighting robot in an arena.",
+      "imageUrl": "https://images.unsplash.com/photo-1710858219135-32fab1809bef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxyb2JvdCUyMGZpZ2h0fGVufDB8fHx8MTc2MTA1NjkxN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "robot fight"
+    },
+    {
+      "id": "cultural-event-3",
+      "description": "A stage with dramatic lighting.",
+      "imageUrl": "https://images.unsplash.com/photo-1524201862652-0d3d485d6d07?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzdGFnZSUyMHBlcmZvcm1hbmNlfGVufDB8fHx8MTc2MTAyNjc3OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "stage performance"
+    },
+    {
+      "id": "tech-event-4",
+      "description": "Women collaborating around a laptop.",
+      "imageUrl": "https://images.unsplash.com/photo-1580894908361-967195033215?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx3b21lbiUyMGNvZGluZ3xlbnwwfHx8fDE3NjEwNTY5MTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "women coding"
+    },
+    {
+      "id": "seminar-event-1",
+      "description": "A crowded conference hall.",
+      "imageUrl": "https://images.unsplash.com/photo-1588865198054-c83788106132?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjb25mZXJlbmNlJTIwaGFsbHxlbnwwfHx8fDE3NjEwMDc4NDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "conference hall"
+    },
+    {
+      "id": "workshop-event-1",
+      "description": "People brainstorming with sticky notes.",
+      "imageUrl": "https://images.unsplash.com/photo-1631203924971-ad99ad16a936?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxicmFpbnN0b3JtaW5nJTIwc2Vzc2lvbnxlbnwwfHx8fDE3NjEwMDYyODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "brainstorming session"
+    },
+    {
+      "id": "tech-event-5",
+      "description": "Two people coding together on one screen.",
+      "imageUrl": "https://images.unsplash.com/photo-1568716353609-12ddc5c67f04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwYWlyJTIwcHJvZ3JhbW1pbmd8ZW58MHx8fHwxNzYxMDU2OTE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "pair programming"
+    },
+    {
+      "id": "cultural-event-4",
+      "description": "An old map with a compass.",
+      "imageUrl": "https://images.unsplash.com/photo-1516546453174-5e1098a4b4af?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx0cmVhc3VyZSUyMG1hcHxlbnwwfHx8fDE3NjEwNTUxNTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "treasure map"
+    },
+    {
+      "id": "workshop-event-2",
+      "description": "A 3D model of a mechanical part on a computer screen.",
+      "imageUrl": "https://images.unsplash.com/photo-1715498984659-03427dbdd353?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxDQUQlMjBkZXNpZ258ZW58MHx8fHwxNzYxMDU2OTE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "CAD design"
+    },
+    {
+      "id": "tech-event-6",
+      "description": "Code on a screen with web design elements.",
+      "imageUrl": "https://images.unsplash.com/photo-1605379399642-870262d3d051?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx3ZWIlMjBkZXZlbG9wbWVudHxlbnwwfHx8fDE3NjA5NjczMzV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "web development"
+    },
+    {
+      "id": "workshop-event-3",
+      "description": "A complex 3D assembly in a CAD software.",
+      "imageUrl": "https://images.unsplash.com/photo-1612886649704-ed025de0e32a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8M0QlMjBtb2RlbGluZ3xlbnwwfHx8fDE3NjEwNTY5MTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "3D modeling"
+    },
+    {
+      "id": "workshop-event-4",
+      "description": "A printed circuit board with components.",
+      "imageUrl": "https://images.unsplash.com/photo-1731400800900-1bce57414c09?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxQQ0IlMjBkZXNpZ258ZW58MHx8fHwxNzYxMDU2OTE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "PCB design"
+    },
+    {
+      "id": "seminar-event-2",
+      "description": "A robotic arm in a factory.",
+      "imageUrl": "https://images.unsplash.com/photo-1649829726631-fcd218631ab5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxyb2JvdGljcyUyMGF1dG9tYXRpb258ZW58MHx8fHwxNzYwOTczNzMzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "robotics automation"
+    },
+    {
+      "id": "seminar-event-3",
+      "description": "An entrepreneur pitching on stage.",
+      "imageUrl": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdGFydHVwJTIwcGl0Y2h8ZW58MHx8fHwxNzYxMDQzNzUwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "startup pitch"
+    },
+    {
+      "id": "tech-event-7",
+      "description": "UI/UX design wireframes on a screen.",
+      "imageUrl": "https://images.unsplash.com/photo-1576153192396-180ecef2a715?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxVSSUyMGRlc2lnbnxlbnwwfHx8fDE3NjEwMDEwNzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "UI design"
+    },
+    {
+      "id": "cultural-event-5",
+      "description": "People networking at a corporate event.",
+      "imageUrl": "https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxuZXR3b3JraW5nJTIwZXZlbnR8ZW58MHx8fHwxNzYwOTUwMDE0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "networking event"
+    }
+  ]
+}
