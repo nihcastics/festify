@@ -1,12 +1,2 @@
-'use client';
-
-import {useContext} from 'react';
-import {AuthContext} from '@/context/auth-provider';
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+// Re-export useAuth from Supabase auth provider
+export {useAuth} from '@/context/supabase-auth-provider';

@@ -1,9 +1,9 @@
 "use client";
 
-import { colleges } from '@/lib/colleges';
-import { events } from '@/lib/events';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
+import { use, useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
 
 const CollegeDetailClient = dynamic(() => import('./college-detail-client'), {
   ssr: false,
@@ -14,9 +14,39 @@ const CollegeDetailClient = dynamic(() => import('./college-detail-client'), {
   ),
 });
 
-export default function CollegeDetailPage({ params }: { params: { id: string } }) {
-  const collegeId = params.id;
-  const college = colleges.find((c) => c.id === collegeId);
+export default function CollegeDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const [college, setCollege] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadCollege();
+  }, [id]);
+
+  const loadCollege = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('colleges')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      setCollege(data);
+    } catch (error) {
+      console.error('Error loading college:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!college) {
     return (
@@ -26,7 +56,6 @@ export default function CollegeDetailPage({ params }: { params: { id: string } }
     );
   }
 
-  const collegeEvents = events.filter((event) => event.college === college.name);
-
-  return <CollegeDetailClient college={college} events={collegeEvents} />;
+  return <CollegeDetailClient college={college} events={[]} />;
 }
+

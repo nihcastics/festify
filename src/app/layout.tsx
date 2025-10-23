@@ -4,6 +4,7 @@ import {Providers} from '@/components/providers';
 import {Toaster} from '@/components/ui/toaster';
 import {Header} from '@/components/header';
 import {Footer} from '@/components/footer';
+import AdminAccessButton from '@/components/admin-access-button';
 
 export const metadata: Metadata = {
   title: 'Festify - Your Campus Events Hub',
@@ -29,6 +30,7 @@ export default function RootLayout({
             <main className="flex-grow">{children}</main>
             <Footer />
           </div>
+          <AdminAccessButton />
           <Toaster />
         </Providers>
       </body>

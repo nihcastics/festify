@@ -13,14 +13,14 @@ export function SearchBar() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-    router.push(`/events?search=${query}`);
+    router.push(`/search?q=${encodeURIComponent(query)}`);
   };
 
   return (
     <form onSubmit={handleSearch} className="relative w-full max-w-sm">
       <Input
         type="search"
-        placeholder="Search events..."
+        placeholder="Search events, colleges..."
         className="pr-10"
         value={query}
         onChange={e => setQuery(e.target.value)}

@@ -1,3 +1,5 @@
+// @ts-nocheck - Optional AI module, requires genkit installation
+// Install with: npm install genkit @genkit-ai/google-genai
 'use server';
 
 /**
