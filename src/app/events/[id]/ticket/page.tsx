@@ -51,10 +51,10 @@ export default function TicketPage() {
       if (eventError) throw eventError;
       setEvent(eventData);
 
-      // Load registration - only show ticket if payment is completed
+      // Load registration with all team data
       const {data: regData, error: regError} = await supabase
         .from('registrations')
-        .select('*, teams(name, current_members, max_members)')
+        .select('*')
         .eq('event_id', eventId)
         .eq('user_id', user!.id)
         .single();
@@ -65,34 +65,54 @@ export default function TicketPage() {
         return;
       }
 
-      // Check if payment is completed
-      if ((regData as any).payment_status !== 'completed') {
-        console.warn('Payment not completed, redirecting to event page');
-        router.push(`/events/${eventId}`);
-        return;
-      }
-
       setRegistration(regData);
-      if ((regData as any).team_id && (regData as any).teams) {
-        setTeam((regData as any).teams);
+
+      // If team registration, load team details
+      if (regData.is_team && regData.team_name) {
+        // Load team members if available
+        const {data: teamData} = await supabase
+          .from('teams')
+          .select(`
+            *,
+            team_members(*)
+          `)
+          .eq('registration_id', regData.id)
+          .single();
+        
+        if (teamData) {
+          setTeam(teamData);
+        }
       }
 
-      // Generate QR code
+      // Generate QR code with comprehensive data
       const ticketData = {
-        eventTitle: (eventData as any).title,
-        eventId: (eventData as any).id,
+        eventTitle: eventData.title,
+        eventId: eventData.id,
+        eventDate: eventData.start_date,
+        eventLocation: eventData.location,
         userName: profile?.full_name || user!.email,
         userEmail: user!.email,
         userId: user!.id,
-        registrationId: (regData as any).id,
-        registrationDate: (regData as any).created_at,
-        teamName: (regData as any).teams?.name,
-        isTeam: (regData as any).is_team_registration,
+        registrationId: regData.id,
+        registrationDate: regData.created_at,
+        registrationStatus: regData.registration_status,
+        paymentStatus: regData.payment_status,
+        paymentAmount: regData.payment_amount,
+        isTeam: regData.is_team,
+        teamSize: regData.team_size,
+        teamName: regData.team_name,
+        teamLeader: regData.team_leader_name,
+        ticketCode: `${regData.id.substring(0, 8).toUpperCase()}-${eventId.substring(0, 4).toUpperCase()}`,
+        generatedAt: new Date().toISOString()
       };
 
       const qrUrl = await QRCode.toDataURL(JSON.stringify(ticketData), {
         width: 300,
         margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF',
+        },
       });
       setQrCodeUrl(qrUrl);
     } catch (error) {
@@ -196,24 +216,12 @@ export default function TicketPage() {
                     <p className="text-muted-foreground text-xs break-all">{user!.email}</p>
                   </div>
                 </div>
-                {team && (
-                  <div className="flex items-start gap-3">
-                    <UsersIcon className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Team</p>
-                      <p className="text-muted-foreground">{team.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {team.current_members}/{team.max_members} members
-                      </p>
-                    </div>
-                  </div>
-                )}
                 <div className="flex items-start gap-3">
                   <Ticket className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
                     <p className="font-medium">Ticket ID</p>
                     <p className="text-muted-foreground font-mono text-xs">
-                      {registration.id.substring(0, 8).toUpperCase()}
+                      {registration.id.substring(0, 8).toUpperCase()}-{eventId.substring(0, 4).toUpperCase()}
                     </p>
                   </div>
                 </div>
@@ -221,9 +229,97 @@ export default function TicketPage() {
             </div>
           </div>
 
-          <div className="bg-muted/50 p-4 rounded-lg text-center text-sm text-muted-foreground border-t">
-            <p>Registration Status: <Badge variant={registration.registration_status === 'confirmed' ? 'default' : 'secondary'}>{registration.registration_status}</Badge></p>
-            <p className="mt-2">Registered on {new Date(registration.created_at).toLocaleDateString()}</p>
+          {/* Team Information */}
+          {registration.is_team && registration.team_name && (
+            <div className="border-t pt-6">
+              <h3 className="font-semibold mb-4 text-lg flex items-center gap-2">
+                <UsersIcon className="h-5 w-5" />
+                Team Information
+              </h3>
+              <div className="space-y-3">
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <p className="text-sm font-medium">Team Name</p>
+                  <p className="text-lg font-bold text-primary">{registration.team_name}</p>
+                </div>
+                
+                {registration.team_leader_name && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Team Leader</p>
+                      <p className="font-medium">{registration.team_leader_name}</p>
+                      {registration.team_leader_email && (
+                        <p className="text-xs text-muted-foreground mt-1">{registration.team_leader_email}</p>
+                      )}
+                      {registration.team_leader_phone && (
+                        <p className="text-xs text-muted-foreground">{registration.team_leader_phone}</p>
+                      )}
+                    </div>
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Team Size</p>
+                      <p className="font-medium">{registration.team_size} members</p>
+                      {registration.team_leader_university_reg && (
+                        <p className="text-xs text-muted-foreground mt-1">Reg: {registration.team_leader_university_reg}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {team && team.team_members && team.team_members.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium mb-2">Team Members</p>
+                    <div className="space-y-2">
+                      {team.team_members.map((member: any, index: number) => (
+                        <div key={index} className="bg-muted/30 p-3 rounded-lg flex items-start gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${member.is_leader ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                            {member.is_leader ? '★' : index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">{member.member_name}</p>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
+                              {member.member_email && <span>✉ {member.member_email}</span>}
+                              {member.member_phone && <span>📱 {member.member_phone}</span>}
+                              {member.university_registration_number && <span>🎓 {member.university_registration_number}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Payment & Status Information */}
+          <div className="bg-muted/50 p-4 rounded-lg text-sm border-t space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Registration Status:</span>
+              <Badge variant={registration.registration_status === 'registered' ? 'default' : 'secondary'} className="capitalize">
+                {registration.registration_status}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Payment Status:</span>
+              <Badge variant={registration.payment_status === 'completed' ? 'default' : 'secondary'} className="capitalize">
+                {registration.payment_status}
+              </Badge>
+            </div>
+            {registration.payment_amount > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Amount Paid:</span>
+                <span className="font-semibold">₹{registration.payment_amount}</span>
+              </div>
+            )}
+            {registration.transaction_id && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Transaction ID:</span>
+                <span className="font-mono text-xs">{registration.transaction_id}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-2 border-t">
+              <span className="text-muted-foreground">Registered on:</span>
+              <span>{new Date(registration.created_at).toLocaleDateString()}</span>
+            </div>
           </div>
         </CardContent>
       </Card>

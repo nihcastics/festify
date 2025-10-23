@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {useRouter} from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,18 +8,44 @@ import {useAuth} from '@/hooks/use-auth';
 import {Button} from '@/components/ui/button';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {Badge} from '@/components/ui/badge';
-import {CalendarDays, Loader2, MapPin, User, IndianRupee, Users as UsersIcon} from 'lucide-react';
+import {CalendarDays, Loader2, MapPin, User, IndianRupee, Users as UsersIcon, Ticket} from 'lucide-react';
 import {getValidImageUrl} from '@/lib/image-utils';
+import {supabase} from '@/lib/supabase/client';
 
 export default function EventDetailClient({event}: {event: any}) {
   const {user, loading} = useAuth();
   const router = useRouter();
+  const [hasRegistered, setHasRegistered] = useState(false);
+  const [checkingRegistration, setCheckingRegistration] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login?redirect=/events/' + event.id);
     }
   }, [user, loading, router, event.id]);
+
+  useEffect(() => {
+    if (user && event.id) {
+      checkRegistration();
+    }
+  }, [user, event.id]);
+
+  const checkRegistration = async () => {
+    try {
+      const {data} = await supabase
+        .from('registrations')
+        .select('id')
+        .eq('event_id', event.id)
+        .eq('user_id', user!.id)
+        .single();
+
+      setHasRegistered(!!data);
+    } catch (error) {
+      setHasRegistered(false);
+    } finally {
+      setCheckingRegistration(false);
+    }
+  };
 
   if (loading || !user) {
     return (
@@ -155,11 +181,44 @@ export default function EventDetailClient({event}: {event: any}) {
               </div>
             </div>
           </div>
-          <Button size="lg" className="w-full" asChild>
-             <Link href={`/events/${event.id}/register`}>
-              {event.registration_fee > 0 ? `Register for ₹${event.registration_fee}` : 'Register for Free'}
-            </Link>
-          </Button>
+          {!checkingRegistration && (
+            <>
+              {hasRegistered ? (
+                <div className="space-y-3">
+                  <Button size="lg" className="w-full" variant="default" asChild>
+                    <Link href={`/events/${event.id}/ticket`}>
+                      <Ticket className="mr-2 h-5 w-5" />
+                      View My Ticket
+                    </Link>
+                  </Button>
+                  <p className="text-center text-sm text-muted-foreground">
+                    You are already registered for this event
+                  </p>
+                </div>
+              ) : (
+                <Button size="lg" className="w-full" asChild>
+                  <Link href={`/events/${event.id}/register`}>
+                    <IndianRupee className="mr-2 h-5 w-5" />
+                    {event.participation_type === 'individual' && event.individual_price > 0 ? (
+                      `Register for ₹${event.individual_price}`
+                    ) : event.participation_type === 'team' && event.team_base_price > 0 ? (
+                      `Register Team from ₹${event.team_base_price}`
+                    ) : event.individual_price > 0 || event.team_base_price > 0 ? (
+                      'Register Now'
+                    ) : (
+                      'Register for Free'
+                    )}
+                  </Link>
+                </Button>
+              )}
+            </>
+          )}
+          {checkingRegistration && (
+            <Button size="lg" className="w-full" disabled>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading...
+            </Button>
+          )}
         </div>
       </div>
     </div>
