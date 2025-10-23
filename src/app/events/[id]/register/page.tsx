@@ -283,50 +283,117 @@ export default function RegisterPage() {
   const handlePaymentComplete = async () => {
     if (!registrationId) return;
 
+    const MAX_TIMEOUT = 30000; // 30 seconds timeout
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Payment processing timeout. Please check your registration status.')), MAX_TIMEOUT)
+    );
+
     try {
-      // Process payment - try RPC first, fallback to direct update
-      let success = await processRegistrationPayment(
-        registrationId,
-        calculatedPrice,
-        'bypass'
-      );
+      // Race between payment processing and timeout
+      await Promise.race([
+        (async () => {
+          // Process payment - try RPC first, fallback to direct update
+          let success = await processRegistrationPayment(
+            registrationId,
+            calculatedPrice,
+            'bypass'
+          );
 
-      // If RPC fails, update directly
-      if (!success) {
-        const txId = `BYPASS-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        const { error: updateError } = await supabase
-          .from('registrations')
-          .update({
-            payment_status: 'completed',
-            payment_amount: calculatedPrice,
-            payment_method: 'bypass',
-            transaction_id: txId,
-            paid_at: new Date().toISOString(),
-            registration_status: 'registered'
-          })
-          .eq('id', registrationId);
+          const txId = `BYPASS-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-        if (updateError) {
-          throw updateError;
-        }
-        success = true;
-      }
+          // If RPC fails, update directly
+          if (!success) {
+            const { error: updateError } = await supabase
+              .from('registrations')
+              // @ts-expect-error - Supabase type inference issue with RLS
+              .update({
+                payment_status: 'completed',
+                payment_amount: calculatedPrice,
+                payment_method: 'bypass',
+                transaction_id: txId,
+                paid_at: new Date().toISOString(),
+                registration_status: 'registered'
+              })
+              .eq('id', registrationId);
 
-      if (success) {
-        toast({
-          title: 'Registration Successful!',
-          description: `You are now registered for ${event?.title}.`,
-        });
+            if (updateError) {
+              throw updateError;
+            }
+            success = true;
+          }
 
-        // Small delay to ensure database is updated
-        await new Promise(resolve => setTimeout(resolve, 500));
+          if (success) {
+            // Create ticket record
+            const ticketCode = `TKT-${Date.now().toString(36).toUpperCase()}-${registrationId.substring(0, 6).toUpperCase()}`;
+            
+            const { data: ticketData, error: ticketError } = await supabase
+              .from('tickets')
+              // @ts-expect-error - Supabase type inference issue
+              .insert({
+                event_id: eventId,
+                registration_id: registrationId,
+                ticket_type: calculatedPrice > 0 ? 'paid' : 'free',
+                price: calculatedPrice,
+                ticket_code: ticketCode,
+                is_valid: true,
+                issued_at: new Date().toISOString()
+              })
+              .select()
+              .single();
 
-        // Redirect to ticket page
-        router.push(`/events/${eventId}/ticket`);
-      } else {
-        throw new Error('Payment processing failed');
-      }
+            if (ticketError) {
+              console.error('Error creating ticket:', ticketError);
+            }
+
+            // Create payment record if there was a payment
+            if (calculatedPrice > 0) {
+              const { error: paymentError } = await supabase
+                .from('payments')
+                // @ts-expect-error - Supabase type inference issue
+                .insert({
+                  registration_id: registrationId,
+                  ticket_id: (ticketData as any)?.id,
+                  amount: calculatedPrice,
+                  payment_status: 'completed',
+                  payment_method: 'bypass',
+                  transaction_id: txId,
+                  payment_date: new Date().toISOString()
+                });
+
+              if (paymentError) {
+                console.error('Error creating payment record:', paymentError);
+              }
+            }
+
+            // Update user's profile if needed (mark as registered attendee)
+            const { error: profileError } = await supabase
+              .from('profiles')
+              // @ts-expect-error - Supabase type inference issue
+              .update({
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', user!.id);
+
+            if (profileError) {
+              console.error('Error updating profile:', profileError);
+            }
+
+            toast({
+              title: 'Registration Successful!',
+              description: `You are now registered for ${event?.title}.`,
+            });
+
+            // Small delay to ensure database is updated
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Redirect to ticket page
+            router.push(`/events/${eventId}/ticket`);
+          } else {
+            throw new Error('Payment processing failed');
+          }
+        })(),
+        timeoutPromise
+      ]);
     } catch (error: any) {
       console.error('Payment error:', error);
       toast({

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import QRCode from 'qrcode';
 import {useAuth} from '@/hooks/use-auth';
 import {Card, CardContent} from '@/components/ui/card';
-import {Loader2, User, Mail, Ticket, Calendar, MapPin, Users as UsersIcon} from 'lucide-react';
+import {Loader2, User, Mail, Ticket, Calendar, MapPin, Users as UsersIcon, CreditCard} from 'lucide-react';
 import {supabase} from '@/lib/supabase/client';
 import {Badge} from '@/components/ui/badge';
 
@@ -16,6 +16,8 @@ export default function TicketPage() {
   const {user, profile, loading: authLoading} = useAuth();
   const [event, setEvent] = useState<any | null>(null);
   const [registration, setRegistration] = useState<any | null>(null);
+  const [ticket, setTicket] = useState<any | null>(null);
+  const [payment, setPayment] = useState<any | null>(null);
   const [team, setTeam] = useState<any | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [loading, setLoading] = useState(true);
@@ -65,10 +67,32 @@ export default function TicketPage() {
         return;
       }
 
-      setRegistration(regData);
+      setRegistration(regData as any);
+
+      // Load ticket record
+      const {data: ticketRecord} = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('registration_id', (regData as any).id)
+        .single();
+      
+      if (ticketRecord) {
+        setTicket(ticketRecord);
+      }
+
+      // Load payment record
+      const {data: paymentRecord} = await supabase
+        .from('payments')
+        .select('*')
+        .eq('registration_id', (regData as any).id)
+        .single();
+      
+      if (paymentRecord) {
+        setPayment(paymentRecord);
+      }
 
       // If team registration, load team details
-      if (regData.is_team && regData.team_name) {
+      if ((regData as any).is_team && (regData as any).team_name) {
         // Load team members if available
         const {data: teamData} = await supabase
           .from('teams')
@@ -76,7 +100,7 @@ export default function TicketPage() {
             *,
             team_members(*)
           `)
-          .eq('registration_id', regData.id)
+          .eq('registration_id', (regData as any).id)
           .single();
         
         if (teamData) {
@@ -85,28 +109,33 @@ export default function TicketPage() {
       }
 
       // Generate QR code with comprehensive data
-      const ticketData = {
-        eventTitle: eventData.title,
-        eventId: eventData.id,
-        eventDate: eventData.start_date,
-        eventLocation: eventData.location,
+      const qrCodeData = {
+        eventTitle: (eventData as any).title,
+        eventId: (eventData as any).id,
+        eventDate: (eventData as any).start_date,
+        eventLocation: (eventData as any).location,
         userName: profile?.full_name || user!.email,
         userEmail: user!.email,
         userId: user!.id,
-        registrationId: regData.id,
-        registrationDate: regData.created_at,
-        registrationStatus: regData.registration_status,
-        paymentStatus: regData.payment_status,
-        paymentAmount: regData.payment_amount,
-        isTeam: regData.is_team,
-        teamSize: regData.team_size,
-        teamName: regData.team_name,
-        teamLeader: regData.team_leader_name,
-        ticketCode: `${regData.id.substring(0, 8).toUpperCase()}-${eventId.substring(0, 4).toUpperCase()}`,
+        registrationId: (regData as any).id,
+        registrationDate: (regData as any).created_at,
+        registrationStatus: (regData as any).registration_status,
+        paymentStatus: (paymentRecord as any)?.payment_status || (regData as any).payment_status,
+        paymentAmount: (paymentRecord as any)?.amount || (regData as any).payment_amount,
+        paymentMethod: (paymentRecord as any)?.payment_method,
+        transactionId: (paymentRecord as any)?.transaction_id || (regData as any).transaction_id,
+        isTeam: (regData as any).is_team,
+        teamSize: (regData as any).team_size,
+        teamName: (regData as any).team_name,
+        teamLeader: (regData as any).team_leader_name,
+        ticketCode: (ticketRecord as any)?.ticket_code || `${(regData as any).id.substring(0, 8).toUpperCase()}-${eventId.substring(0, 4).toUpperCase()}`,
+        ticketType: (ticketRecord as any)?.ticket_type,
+        ticketValid: (ticketRecord as any)?.is_valid,
+        issuedAt: (ticketRecord as any)?.issued_at,
         generatedAt: new Date().toISOString()
       };
 
-      const qrUrl = await QRCode.toDataURL(JSON.stringify(ticketData), {
+      const qrUrl = await QRCode.toDataURL(JSON.stringify(qrCodeData), {
         width: 300,
         margin: 2,
         color: {
@@ -290,37 +319,120 @@ export default function TicketPage() {
             </div>
           )}
 
-          {/* Payment & Status Information */}
-          <div className="bg-muted/50 p-4 rounded-lg text-sm border-t space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Registration Status:</span>
-              <Badge variant={registration.registration_status === 'registered' ? 'default' : 'secondary'} className="capitalize">
-                {registration.registration_status}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Payment Status:</span>
-              <Badge variant={registration.payment_status === 'completed' ? 'default' : 'secondary'} className="capitalize">
-                {registration.payment_status}
-              </Badge>
-            </div>
-            {registration.payment_amount > 0 && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Amount Paid:</span>
-                <span className="font-semibold">₹{registration.payment_amount}</span>
+          {/* Official Ticket Information */}
+          {ticket && (
+            <div className="border-t pt-6">
+              <h3 className="font-semibold mb-4 text-lg flex items-center gap-2">
+                <Ticket className="h-5 w-5" />
+                Official Ticket Details
+              </h3>
+              <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-4 rounded-lg space-y-3 border border-primary/20">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Ticket Code:</span>
+                  <span className="font-mono font-bold text-lg">{(ticket as any).ticket_code}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Ticket Type:</span>
+                  <Badge variant="outline" className="capitalize">{(ticket as any).ticket_type}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Status:</span>
+                  <Badge variant={(ticket as any).is_valid ? 'default' : 'destructive'}>
+                    {(ticket as any).is_valid ? '✓ Valid Ticket' : '✗ Invalid'}
+                  </Badge>
+                </div>
+                {(ticket as any).price > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Ticket Price:</span>
+                    <span className="font-semibold text-lg">₹{(ticket as any).price}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-2 border-t border-primary/20">
+                  <span className="text-sm text-muted-foreground">Issued on:</span>
+                  <span className="text-sm">{new Date((ticket as any).issued_at).toLocaleString('en-US', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                  })}</span>
+                </div>
               </div>
-            )}
-            {registration.transaction_id && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Transaction ID:</span>
-                <span className="font-mono text-xs">{registration.transaction_id}</span>
-              </div>
-            )}
-            <div className="flex items-center justify-between pt-2 border-t">
-              <span className="text-muted-foreground">Registered on:</span>
-              <span>{new Date(registration.created_at).toLocaleDateString()}</span>
             </div>
-          </div>
+          )}
+
+          {/* Payment Information */}
+          {payment && (
+            <div className="border-t pt-6">
+              <h3 className="font-semibold mb-4 text-lg flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Payment Details
+              </h3>
+              <div className="bg-muted/50 p-4 rounded-lg space-y-3 border">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Amount Paid:</span>
+                  <span className="font-bold text-xl text-green-600">₹{(payment as any).amount}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Payment Status:</span>
+                  <Badge variant={(payment as any).payment_status === 'completed' ? 'default' : 'secondary'} className="capitalize">
+                    {(payment as any).payment_status}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Payment Method:</span>
+                  <span className="capitalize">{(payment as any).payment_method}</span>
+                </div>
+                {(payment as any).transaction_id && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Transaction ID:</span>
+                    <span className="font-mono text-xs">{(payment as any).transaction_id}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <span className="text-sm text-muted-foreground">Payment Date:</span>
+                  <span className="text-sm">{new Date((payment as any).payment_date).toLocaleString('en-US', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                  })}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Fallback: Registration Payment Information (if payment record not found) */}
+          {!payment && (
+            <div className="border-t pt-6">
+              <h3 className="font-semibold mb-4 text-lg">Registration & Payment Status</h3>
+              <div className="bg-muted/50 p-4 rounded-lg text-sm border space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Registration Status:</span>
+                  <Badge variant={registration.registration_status === 'registered' ? 'default' : 'secondary'} className="capitalize">
+                    {registration.registration_status}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Payment Status:</span>
+                  <Badge variant={registration.payment_status === 'completed' ? 'default' : 'secondary'} className="capitalize">
+                    {registration.payment_status}
+                  </Badge>
+                </div>
+                {registration.payment_amount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Amount Paid:</span>
+                    <span className="font-semibold">₹{registration.payment_amount}</span>
+                  </div>
+                )}
+                {registration.transaction_id && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Transaction ID:</span>
+                    <span className="font-mono text-xs">{registration.transaction_id}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <span className="text-muted-foreground">Registered on:</span>
+                  <span>{new Date(registration.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

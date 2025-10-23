@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useTransition } from 'react';
 import { EventCard } from '@/components/event-card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,6 +9,23 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Filter, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
+import { debounce, cache } from '@/lib/performance';
+
+// Helper function to filter events by user eligibility
+function filterEventsByEligibility(events: any[], profile: any) {
+  if (!events || events.length === 0) return [];
+  
+  if (profile) {
+    return events.filter((event: any) => {
+      if (event.is_global) return true;
+      if (!event.college_id) return true;
+      if (!profile.college_id) return event.is_global || !event.college_id;
+      return event.college_id === profile.college_id;
+    });
+  }
+  
+  return events.filter((event: any) => event.is_global || !event.college_id);
+}
 
 export function EventsPageClient() {
   const searchParams = useSearchParams();
@@ -21,6 +38,7 @@ export function EventsPageClient() {
   const [events, setEvents] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setSearchTerm(searchParams.get('search') || '');
@@ -29,55 +47,48 @@ export function EventsPageClient() {
 
   useEffect(() => {
     loadEventsAndCategories();
-  }, []); // Remove profile dependency to prevent re-loading
+  }, [profile]);
 
   const loadEventsAndCategories = async () => {
+    setLoading(true);
     try {
-      // Load categories
-      const { data: categoriesData } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-
-      // Load published events with visibility filtering
-      let query = supabase
-        .from('events')
-        .select(`
-          *,
-          category:categories(id, name),
-          college:colleges(id, name, location),
-          organizer:profiles!events_organizer_id_fkey(full_name, organization_name)
-        `)
-        .eq('event_status', 'published')
-        .gte('end_date', new Date().toISOString())
-        .order('start_date', { ascending: true });
-
-      const { data: eventsData } = await query;
-
-      // Filter events based on user's college eligibility
-      let filteredEvents = eventsData || [];
-      if (profile) {
-        filteredEvents = (eventsData || []).filter((event: any) => {
-          // Global events are visible to everyone
-          if (event.is_global) return true;
-          
-          // Events without a college are visible to everyone
-          if (!event.college_id) return true;
-          
-          // If user has no college, they only see global events
-          if (!profile.college_id) return event.is_global || !event.college_id;
-          
-          // College-specific events are only visible to users from that college
-          return event.college_id === profile.college_id;
-        });
-      } else {
-        // Not logged in users only see global events and events without college
-        filteredEvents = (eventsData || []).filter((event: any) => 
-          event.is_global || !event.college_id
-        );
+      // Try to get from cache first
+      const cacheKey = `events_categories_${profile?.college_id || 'all'}`;
+      const cached = cache.get(cacheKey);
+      
+      if (cached) {
+        setCategories(cached.categories);
+        setEvents(cached.events);
+        setLoading(false);
+        return;
       }
 
-      setCategories(categoriesData || []);
+      // Parallel loading for better performance
+      const [categoriesResult, eventsResult] = await Promise.allSettled([
+        supabase.from('categories').select('*').order('name'),
+        supabase
+          .from('events')
+          .select(`
+            *,
+            category:categories(id, name),
+            college:colleges(id, name, location),
+            organizer:profiles!events_organizer_id_fkey(full_name, organization_name)
+          `)
+          .eq('event_status', 'published')
+          .gte('end_date', new Date().toISOString())
+          .order('start_date', { ascending: true })
+      ]);
+
+      const categoriesData = categoriesResult.status === 'fulfilled' ? categoriesResult.value.data || [] : [];
+      const eventsData = eventsResult.status === 'fulfilled' ? eventsResult.value.data || [] : [];
+
+      // Filter events based on user's college eligibility
+      const filteredEvents = filterEventsByEligibility(eventsData, profile);
+
+      // Cache the results
+      cache.set(cacheKey, { categories: categoriesData, events: filteredEvents }, 2 * 60 * 1000); // 2 min cache
+
+      setCategories(categoriesData);
       setEvents(filteredEvents);
     } catch (error) {
       console.error('Error loading events:', error);
@@ -86,15 +97,36 @@ export function EventsPageClient() {
     }
   };
 
-  const filteredEvents = events.filter(event => {
-    const matchesCategory = selectedCategory === 'All' || event.category?.name === selectedCategory;
-    const matchesSearch = 
-      event.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.college?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.location.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  // Optimized filtering with useMemo
+  const filteredEvents = useMemo(() => {
+    if (!events || events.length === 0) return [];
+    
+    return events.filter(event => {
+      const matchesCategory = selectedCategory === 'All' || event.category?.name === selectedCategory;
+      
+      if (!searchTerm.trim()) return matchesCategory;
+      
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        event.title?.toLowerCase().includes(searchLower) || 
+        event.description?.toLowerCase().includes(searchLower) ||
+        event.college?.name?.toLowerCase().includes(searchLower) ||
+        event.location?.toLowerCase().includes(searchLower) ||
+        event.category?.name?.toLowerCase().includes(searchLower);
+      
+      return matchesCategory && matchesSearch;
+    });
+  }, [events, selectedCategory, searchTerm]);
+
+  // Debounced search handler
+  const handleSearchChange = useCallback(
+    debounce((value: string) => {
+      startTransition(() => {
+        setSearchTerm(value);
+      });
+    }, 300),
+    []
+  );
 
   if (loading) {
     return (
@@ -156,8 +188,8 @@ export function EventsPageClient() {
                 <Input
                   type="text"
                   placeholder="Search by name, description, or location..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
+                  defaultValue={searchTerm}
+                  onChange={e => handleSearchChange(e.target.value)}
                   className="h-12 pl-12 text-base border-2 focus-visible:ring-purple-500"
                 />
               </div>
