@@ -126,6 +126,17 @@ export default function AdminDashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
+      // Check Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔐 Supabase Session:', session ? 'Active' : 'None');
+      console.log('🔐 User ID:', session?.user?.id || 'NULL');
+      
+      if (!session) {
+        console.error('❌ NO SUPABASE SESSION - Admin must be logged in through Supabase Auth!');
+        console.error('💡 The admin dashboard queries will fail because auth.uid() is NULL');
+        console.error('💡 Solution: Create an actual admin user in Supabase and log in with that');
+      }
+
       // Parallel loading of all stats for better performance
       const statsPromises = [
         supabase.from('events').select('*', { count: 'exact', head: true }),
@@ -139,6 +150,18 @@ export default function AdminDashboard() {
       ];
 
       const statsResults = await Promise.allSettled(statsPromises);
+      
+      // Log stats results
+      statsResults.forEach((result, index) => {
+        const tables = ['events', 'colleges', 'profiles', 'registrations', 'teams', 'notifications', 'tickets', 'payments'];
+        if (result.status === 'rejected') {
+          console.error(`❌ Stats error for ${tables[index]}:`, result.reason);
+        } else if (result.value.error) {
+          console.error(`❌ Stats error for ${tables[index]}:`, result.value.error);
+        } else {
+          console.log(`✓ Stats ${tables[index]}: ${result.value.count || 0} records`);
+        }
+      });
 
       setStats({
         totalEvents: statsResults[0].status === 'fulfilled' ? statsResults[0].value.count || 0 : 0,
@@ -165,16 +188,13 @@ export default function AdminDashboard() {
           .select(`
             *, 
             profiles(full_name, email), 
-            events(title), 
-            teams(name),
-            tickets(ticket_code, ticket_type, is_valid, price, issued_at),
-            payments(amount, payment_status, payment_method, transaction_id, payment_date)
+            events(title)
           `)
           .order('created_at', { ascending: false })
           .limit(100),
         supabase
           .from('teams')
-          .select('*, events(title), profiles!teams_leader_id_fkey(full_name)')
+          .select('*,events(title)')
           .order('created_at', { ascending: false })
           .limit(50),
         supabase
@@ -184,26 +204,38 @@ export default function AdminDashboard() {
           .limit(100),
         supabase
           .from('tickets')
-          .select('*, registrations(profiles(full_name, email), events(title))')
-          .order('issued_at', { ascending: false })
+          .select('*, events(title), registrations(profiles(full_name, email))')
+          .order('created_at', { ascending: false })
           .limit(100),
         supabase
           .from('payments')
-          .select('*, registrations(profiles(full_name, email), events(title)), tickets(ticket_code)')
-          .order('payment_date', { ascending: false })
+          .select('*, registrations(events(title), profiles(full_name, email)), tickets(ticket_code, ticket_type)')
+          .order('created_at', { ascending: false })
           .limit(100),
       ];
 
       const dataResults = await Promise.allSettled(dataPromises);
 
-      setEvents(dataResults[0].status === 'fulfilled' ? dataResults[0].value.data || [] : []);
-      setColleges(dataResults[1].status === 'fulfilled' ? dataResults[1].value.data || [] : []);
-      setUsers(dataResults[2].status === 'fulfilled' ? dataResults[2].value.data || [] : []);
-      setRegistrations(dataResults[3].status === 'fulfilled' ? dataResults[3].value.data || [] : []);
-      setTeams(dataResults[4].status === 'fulfilled' ? dataResults[4].value.data || [] : []);
-      setNotifications(dataResults[5].status === 'fulfilled' ? dataResults[5].value.data || [] : []);
-      setTickets(dataResults[6].status === 'fulfilled' ? dataResults[6].value.data || [] : []);
-      setPayments(dataResults[7].status === 'fulfilled' ? dataResults[7].value.data || [] : []);
+      // Log any errors for debugging
+      dataResults.forEach((result, index) => {
+        const tables = ['events', 'colleges', 'profiles', 'registrations', 'teams', 'notifications', 'tickets', 'payments'];
+        if (result.status === 'rejected') {
+          console.error(`Error loading ${tables[index]}:`, result.reason);
+        } else if (result.value.error) {
+          console.error(`Error loading ${tables[index]}:`, result.value.error);
+        } else {
+          console.log(`✓ Loaded ${tables[index]}:`, result.value.data?.length || 0, 'records');
+        }
+      });
+
+      setEvents(dataResults[0].status === 'fulfilled' && !dataResults[0].value.error ? dataResults[0].value.data || [] : []);
+      setColleges(dataResults[1].status === 'fulfilled' && !dataResults[1].value.error ? dataResults[1].value.data || [] : []);
+      setUsers(dataResults[2].status === 'fulfilled' && !dataResults[2].value.error ? dataResults[2].value.data || [] : []);
+      setRegistrations(dataResults[3].status === 'fulfilled' && !dataResults[3].value.error ? dataResults[3].value.data || [] : []);
+      setTeams(dataResults[4].status === 'fulfilled' && !dataResults[4].value.error ? dataResults[4].value.data || [] : []);
+      setNotifications(dataResults[5].status === 'fulfilled' && !dataResults[5].value.error ? dataResults[5].value.data || [] : []);
+      setTickets(dataResults[6].status === 'fulfilled' && !dataResults[6].value.error ? dataResults[6].value.data || [] : []);
+      setPayments(dataResults[7].status === 'fulfilled' && !dataResults[7].value.error ? dataResults[7].value.data || [] : []);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       toast({
@@ -1228,16 +1260,26 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                             <TableHead>User</TableHead>
                             <TableHead>Event</TableHead>
                             <TableHead>Type</TableHead>
-                            <TableHead>Team</TableHead>
-                            <TableHead>Ticket</TableHead>
-                            <TableHead>Payment</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Payment Status</TableHead>
+                            <TableHead>Amount</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {registrations.map((registration: any) => (
+                          {registrations.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={8} className="h-32 text-center">
+                                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                  <BarChart3 className="h-12 w-12 mb-2 opacity-20" />
+                                  <p>No registrations found</p>
+                                  <p className="text-xs">Registrations will appear here once users register for events</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            registrations.map((registration: any) => (
                             <TableRow key={registration.id}>
                               <TableCell className="font-medium">
                                 <div>
@@ -1253,45 +1295,6 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                                   <Badge variant="secondary">Individual</Badge>
                                 )}
                               </TableCell>
-                              <TableCell>{registration.teams?.name || '-'}</TableCell>
-                              <TableCell>
-                                {registration.tickets && registration.tickets.length > 0 ? (
-                                  <div className="space-y-1">
-                                    <div className="font-mono text-xs">{registration.tickets[0].ticket_code}</div>
-                                    <div className="flex items-center gap-1">
-                                      <Badge 
-                                        variant={registration.tickets[0].is_valid ? 'default' : 'destructive'}
-                                        className="text-xs"
-                                      >
-                                        {registration.tickets[0].is_valid ? '✓ Valid' : '✗ Invalid'}
-                                      </Badge>
-                                      <Badge variant="outline" className="text-xs capitalize">
-                                        {registration.tickets[0].ticket_type}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">No ticket</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {registration.payments && registration.payments.length > 0 ? (
-                                  <div className="space-y-1">
-                                    <div className="font-semibold text-green-600">₹{registration.payments[0].amount}</div>
-                                    <Badge 
-                                      variant={registration.payments[0].payment_status === 'completed' ? 'default' : 'secondary'}
-                                      className="text-xs capitalize"
-                                    >
-                                      {registration.payments[0].payment_status}
-                                    </Badge>
-                                    <div className="text-xs text-muted-foreground capitalize">
-                                      {registration.payments[0].payment_method}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">No payment</span>
-                                )}
-                              </TableCell>
                               <TableCell>
                                 {registration.registration_status === 'confirmed' && (
                                   <Badge className="bg-green-500 hover:bg-green-600">Confirmed</Badge>
@@ -1302,14 +1305,34 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                                 {registration.registration_status === 'pending' && (
                                   <Badge variant="outline">Pending</Badge>
                                 )}
+                                {registration.registration_status === 'attended' && (
+                                  <Badge className="bg-blue-500 hover:bg-blue-600">Attended</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {registration.payment_status === 'completed' && (
+                                  <Badge className="bg-green-500 hover:bg-green-600">Paid</Badge>
+                                )}
+                                {registration.payment_status === 'pending' && (
+                                  <Badge variant="outline">Pending</Badge>
+                                )}
+                                {registration.payment_status === 'failed' && (
+                                  <Badge variant="destructive">Failed</Badge>
+                                )}
+                                {registration.payment_status === 'refunded' && (
+                                  <Badge variant="secondary">Refunded</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-semibold">
+                                {registration.amount_paid ? `₹${registration.amount_paid}` : '₹0'}
                               </TableCell>
                               <TableCell>
                                 <div className="text-sm">
                                   {new Date(registration.created_at).toLocaleDateString()}
                                 </div>
-                                {registration.tickets && registration.tickets.length > 0 && registration.tickets[0].issued_at && (
+                                {registration.payment_completed_at && (
                                   <div className="text-xs text-muted-foreground">
-                                    Issued: {new Date(registration.tickets[0].issued_at).toLocaleDateString()}
+                                    Paid: {new Date(registration.payment_completed_at).toLocaleDateString()}
                                   </div>
                                 )}
                               </TableCell>
@@ -1329,7 +1352,8 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))}
+                          ))
+                          )}
                         </TableBody>
                       </Table>
                     </div>
@@ -1370,26 +1394,45 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {teams.map((team: any) => (
-                            <TableRow key={team.id}>
-                              <TableCell className="font-medium">{team.name}</TableCell>
-                              <TableCell>{team.events?.title || 'N/A'}</TableCell>
-                              <TableCell>{team.profiles?.full_name || 'Unknown'}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline">
-                                    {team.current_members}/{team.max_members}
-                                  </Badge>
-                                  {team.is_full && (
-                                    <Badge className="bg-green-500 hover:bg-green-600">Full</Badge>
-                                  )}
+                          {teams.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={7} className="h-32 text-center">
+                                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                  <Users className="h-12 w-12 mb-2 opacity-20" />
+                                  <p>No teams found</p>
+                                  <p className="text-xs">Teams will appear here when users register as teams</p>
                                 </div>
                               </TableCell>
+                            </TableRow>
+                          ) : (
+                            teams.map((team: any) => (
+                            <TableRow key={team.id}>
+                              <TableCell className="font-medium">{team.name || team.team_name || 'N/A'}</TableCell>
+                              <TableCell>{team.events?.title || 'N/A'}</TableCell>
+                              <TableCell>{team.team_leader_name || team.profiles?.full_name || 'Unknown'}</TableCell>
                               <TableCell>
-                                {team.is_full ? (
-                                  <Badge className="bg-green-500 hover:bg-green-600">Complete</Badge>
+                                {team.current_members && team.max_members ? (
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline">
+                                      {team.current_members}/{team.max_members}
+                                    </Badge>
+                                    {team.is_full && (
+                                      <Badge className="bg-green-500 hover:bg-green-600">Full</Badge>
+                                    )}
+                                  </div>
                                 ) : (
-                                  <Badge variant="secondary">Recruiting</Badge>
+                                  <span className="text-muted-foreground text-xs">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {team.is_full !== undefined ? (
+                                  team.is_full ? (
+                                    <Badge className="bg-green-500 hover:bg-green-600">Complete</Badge>
+                                  ) : (
+                                    <Badge variant="secondary">Recruiting</Badge>
+                                  )
+                                ) : (
+                                  <Badge variant="outline">Active</Badge>
                                 )}
                               </TableCell>
                               <TableCell>
@@ -1409,7 +1452,8 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))}
+                          ))
+                          )}
                         </TableBody>
                       </Table>
                     </div>
@@ -1449,7 +1493,18 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {notifications.map((notification: any) => (
+                          {notifications.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="h-32 text-center">
+                                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                  <AlertCircle className="h-12 w-12 mb-2 opacity-20" />
+                                  <p>No notifications found</p>
+                                  <p className="text-xs">System notifications will appear here</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            notifications.map((notification: any) => (
                             <TableRow key={notification.id} className={notification.is_read ? '' : 'bg-amber-50/50 dark:bg-amber-950/20'}>
                               <TableCell className="font-medium">
                                 <div>
@@ -1502,7 +1557,8 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))}
+                          ))
+                          )}
                         </TableBody>
                       </Table>
                     </div>
@@ -1538,42 +1594,54 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {tickets.map((ticket: any) => (
-                          <TableRow key={ticket.id}>
-                            <TableCell className="font-mono font-medium">{ticket.ticket_code}</TableCell>
-                            <TableCell>
-                              {ticket.registrations?.profiles ? (
-                                <div>
-                                  <div className="font-medium">{ticket.registrations.profiles.full_name}</div>
-                                  <div className="text-xs text-muted-foreground">{ticket.registrations.profiles.email}</div>
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground">Unknown</span>
-                              )}
-                            </TableCell>
-                            <TableCell>{ticket.registrations?.events?.title || 'N/A'}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="capitalize">
-                                {ticket.ticket_type}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="font-semibold">₹{ticket.price}</TableCell>
-                            <TableCell>
-                              <Badge variant={ticket.is_valid ? 'default' : 'destructive'}>
-                                {ticket.is_valid ? '✓ Valid' : '✗ Invalid'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {new Date(ticket.issued_at).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                        {tickets.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={7} className="h-32 text-center">
+                              <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                <Ticket className="h-12 w-12 mb-2 opacity-20" />
+                                <p>No tickets found</p>
+                                <p className="text-xs">Tickets will appear here after successful registrations</p>
+                              </div>
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ) : (
+                          tickets.map((ticket: any) => (
+                            <TableRow key={ticket.id}>
+                              <TableCell className="font-mono font-medium">{ticket.ticket_code}</TableCell>
+                              <TableCell>
+                                {ticket.registrations?.profiles ? (
+                                  <div>
+                                    <div className="font-medium">{ticket.registrations.profiles.full_name}</div>
+                                    <div className="text-xs text-muted-foreground">{ticket.registrations.profiles.email}</div>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground">Unknown</span>
+                                )}
+                              </TableCell>
+                              <TableCell>{ticket.events?.title || 'N/A'}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="capitalize">
+                                  {ticket.ticket_type}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-semibold">₹{ticket.price}</TableCell>
+                              <TableCell>
+                                <Badge variant={ticket.is_valid ? 'default' : 'destructive'}>
+                                  {ticket.is_valid ? '✓ Valid' : '✗ Invalid'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {new Date(ticket.issued_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -1609,49 +1677,61 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {payments.map((payment: any) => (
-                          <TableRow key={payment.id}>
-                            <TableCell>
-                              {payment.registrations?.profiles ? (
-                                <div>
-                                  <div className="font-medium">{payment.registrations.profiles.full_name}</div>
-                                  <div className="text-xs text-muted-foreground">{payment.registrations.profiles.email}</div>
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground">Unknown</span>
-                              )}
-                            </TableCell>
-                            <TableCell>{payment.registrations?.events?.title || 'N/A'}</TableCell>
-                            <TableCell>
-                              {payment.tickets?.ticket_code ? (
-                                <span className="font-mono text-xs">{payment.tickets.ticket_code}</span>
-                              ) : (
-                                <span className="text-muted-foreground text-xs">-</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="font-bold text-green-600">₹{payment.amount}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="capitalize">
-                                {payment.payment_method}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={payment.payment_status === 'completed' ? 'default' : 'secondary'} className="capitalize">
-                                {payment.payment_status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="font-mono text-xs">{payment.transaction_id}</TableCell>
-                            <TableCell>
-                              {new Date(payment.payment_date).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                        {payments.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={8} className="h-32 text-center">
+                              <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                <DatabaseIcon className="h-12 w-12 mb-2 opacity-20" />
+                                <p>No payments found</p>
+                                <p className="text-xs">Payment records will appear here after transactions</p>
+                              </div>
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ) : (
+                          payments.map((payment: any) => (
+                            <TableRow key={payment.id}>
+                              <TableCell>
+                                {payment.registrations?.profiles ? (
+                                  <div>
+                                    <div className="font-medium">{payment.registrations.profiles.full_name}</div>
+                                    <div className="text-xs text-muted-foreground">{payment.registrations.profiles.email}</div>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground">Unknown</span>
+                                )}
+                              </TableCell>
+                              <TableCell>{payment.registrations?.events?.title || 'N/A'}</TableCell>
+                              <TableCell>
+                                {payment.tickets?.ticket_code ? (
+                                  <span className="font-mono text-xs">{payment.tickets.ticket_code}</span>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-bold text-green-600">₹{payment.amount}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="capitalize">
+                                  {payment.payment_method}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={payment.payment_status === 'completed' ? 'default' : 'secondary'} className="capitalize">
+                                  {payment.payment_status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">{payment.transaction_id}</TableCell>
+                              <TableCell>
+                                {new Date(payment.payment_date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                   </div>
