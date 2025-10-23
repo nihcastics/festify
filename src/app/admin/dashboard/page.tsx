@@ -1260,9 +1260,10 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                             <TableHead>User</TableHead>
                             <TableHead>Event</TableHead>
                             <TableHead>Type</TableHead>
+                            <TableHead>Team</TableHead>
+                            <TableHead>Ticket</TableHead>
+                            <TableHead>Payment</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead>Payment Status</TableHead>
-                            <TableHead>Amount</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
@@ -1270,7 +1271,7 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                         <TableBody>
                           {registrations.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={8} className="h-32 text-center">
+                              <TableCell colSpan={9} className="h-32 text-center">
                                 <div className="flex flex-col items-center justify-center text-muted-foreground">
                                   <BarChart3 className="h-12 w-12 mb-2 opacity-20" />
                                   <p>No registrations found</p>
@@ -1296,6 +1297,29 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                                 )}
                               </TableCell>
                               <TableCell>
+                                {registration.team_name || registration.team_id ? (
+                                  <span className="text-sm">{registration.team_name || 'Team'}</span>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-muted-foreground text-xs">View separately</span>
+                              </TableCell>
+                              <TableCell>
+                                <div className="space-y-1">
+                                  <div className="font-semibold">
+                                    {registration.amount_paid ? `₹${registration.amount_paid}` : '₹0'}
+                                  </div>
+                                  <Badge 
+                                    variant={registration.payment_status === 'completed' ? 'default' : 'secondary'}
+                                    className="text-xs"
+                                  >
+                                    {registration.payment_status || 'pending'}
+                                  </Badge>
+                                </div>
+                              </TableCell>
+                              <TableCell>
                                 {registration.registration_status === 'confirmed' && (
                                   <Badge className="bg-green-500 hover:bg-green-600">Confirmed</Badge>
                                 )}
@@ -1308,23 +1332,6 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                                 {registration.registration_status === 'attended' && (
                                   <Badge className="bg-blue-500 hover:bg-blue-600">Attended</Badge>
                                 )}
-                              </TableCell>
-                              <TableCell>
-                                {registration.payment_status === 'completed' && (
-                                  <Badge className="bg-green-500 hover:bg-green-600">Paid</Badge>
-                                )}
-                                {registration.payment_status === 'pending' && (
-                                  <Badge variant="outline">Pending</Badge>
-                                )}
-                                {registration.payment_status === 'failed' && (
-                                  <Badge variant="destructive">Failed</Badge>
-                                )}
-                                {registration.payment_status === 'refunded' && (
-                                  <Badge variant="secondary">Refunded</Badge>
-                                )}
-                              </TableCell>
-                              <TableCell className="font-semibold">
-                                {registration.amount_paid ? `₹${registration.amount_paid}` : '₹0'}
                               </TableCell>
                               <TableCell>
                                 <div className="text-sm">
