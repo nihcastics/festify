@@ -185,16 +185,12 @@ export default function AdminDashboard() {
         supabase.from('profiles').select('*, colleges(name)').order('created_at', { ascending: false }).limit(50),
         supabase
           .from('registrations')
-          .select(`
-            *, 
-            profiles(full_name, email), 
-            events(title)
-          `)
+          .select('*, profiles(full_name, email), events(title)')
           .order('created_at', { ascending: false })
           .limit(100),
         supabase
           .from('teams')
-          .select('*,events(title)')
+          .select('*')
           .order('created_at', { ascending: false })
           .limit(50),
         supabase
@@ -204,12 +200,12 @@ export default function AdminDashboard() {
           .limit(100),
         supabase
           .from('tickets')
-          .select('*, events(title), registrations(profiles(full_name, email))')
+          .select('*')
           .order('created_at', { ascending: false })
           .limit(100),
         supabase
           .from('payments')
-          .select('*, registrations(events(title), profiles(full_name, email)), tickets(ticket_code, ticket_type)')
+          .select('*')
           .order('created_at', { ascending: false })
           .limit(100),
       ];
@@ -234,8 +230,51 @@ export default function AdminDashboard() {
       setRegistrations(dataResults[3].status === 'fulfilled' && !dataResults[3].value.error ? dataResults[3].value.data || [] : []);
       setTeams(dataResults[4].status === 'fulfilled' && !dataResults[4].value.error ? dataResults[4].value.data || [] : []);
       setNotifications(dataResults[5].status === 'fulfilled' && !dataResults[5].value.error ? dataResults[5].value.data || [] : []);
-      setTickets(dataResults[6].status === 'fulfilled' && !dataResults[6].value.error ? dataResults[6].value.data || [] : []);
-      setPayments(dataResults[7].status === 'fulfilled' && !dataResults[7].value.error ? dataResults[7].value.data || [] : []);
+      
+      // Process tickets with lookups
+      const ticketsData = dataResults[6].status === 'fulfilled' && !dataResults[6].value.error ? dataResults[6].value.data || [] : [];
+      const registrationsData = dataResults[3].status === 'fulfilled' && !dataResults[3].value.error ? dataResults[3].value.data || [] : [];
+      const eventsData = dataResults[0].status === 'fulfilled' && !dataResults[0].value.error ? dataResults[0].value.data || [] : [];
+      
+      // Enrich tickets with event and user info
+      const enrichedTickets = (ticketsData as any[]).map((ticket: any) => {
+        const registration = (registrationsData as any[]).find((r: any) => r.id === ticket.registration_id) as any;
+        const event = (eventsData as any[]).find((e: any) => e.id === ticket.event_id) as any;
+        return {
+          ...ticket,
+          user_name: registration?.profiles?.full_name || 'Unknown',
+          user_email: registration?.profiles?.email || '',
+          event_title: event?.title || 'N/A'
+        };
+      });
+      setTickets(enrichedTickets);
+      
+      // Process teams with event lookup
+      const teamsData = dataResults[4].status === 'fulfilled' && !dataResults[4].value.error ? dataResults[4].value.data || [] : [];
+      const enrichedTeams = (teamsData as any[]).map((team: any) => {
+        const event = (eventsData as any[]).find((e: any) => e.id === team.event_id) as any;
+        return {
+          ...team,
+          event_title: event?.title || 'N/A'
+        };
+      });
+      setTeams(enrichedTeams);
+      
+      // Process payments with lookups
+      const paymentsData = dataResults[7].status === 'fulfilled' && !dataResults[7].value.error ? dataResults[7].value.data || [] : [];
+      const enrichedPayments = (paymentsData as any[]).map((payment: any) => {
+        const registration = (registrationsData as any[]).find((r: any) => r.id === payment.registration_id) as any;
+        const ticket = (enrichedTickets as any[]).find((t: any) => t.id === payment.ticket_id) as any;
+        const event = registration ? (eventsData as any[]).find((e: any) => e.id === registration.event_id) as any : null;
+        return {
+          ...payment,
+          user_name: registration?.profiles?.full_name || 'Unknown',
+          user_email: registration?.profiles?.email || '',
+          event_title: event?.title || 'N/A',
+          ticket_code: ticket?.ticket_code || '-'
+        };
+      });
+      setPayments(enrichedPayments);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       toast({
@@ -1415,8 +1454,8 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                             teams.map((team: any) => (
                             <TableRow key={team.id}>
                               <TableCell className="font-medium">{team.name || team.team_name || 'N/A'}</TableCell>
-                              <TableCell>{team.events?.title || 'N/A'}</TableCell>
-                              <TableCell>{team.team_leader_name || team.profiles?.full_name || 'Unknown'}</TableCell>
+                              <TableCell>{team.event_title}</TableCell>
+                              <TableCell>{team.team_leader_name || 'Unknown'}</TableCell>
                               <TableCell>
                                 {team.current_members && team.max_members ? (
                                   <div className="flex items-center gap-2">
@@ -1616,16 +1655,12 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                             <TableRow key={ticket.id}>
                               <TableCell className="font-mono font-medium">{ticket.ticket_code}</TableCell>
                               <TableCell>
-                                {ticket.registrations?.profiles ? (
-                                  <div>
-                                    <div className="font-medium">{ticket.registrations.profiles.full_name}</div>
-                                    <div className="text-xs text-muted-foreground">{ticket.registrations.profiles.email}</div>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground">Unknown</span>
-                                )}
+                                <div>
+                                  <div className="font-medium">{ticket.user_name}</div>
+                                  <div className="text-xs text-muted-foreground">{ticket.user_email}</div>
+                                </div>
                               </TableCell>
-                              <TableCell>{ticket.events?.title || 'N/A'}</TableCell>
+                              <TableCell>{ticket.event_title}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="capitalize">
                                   {ticket.ticket_type}
@@ -1698,22 +1733,14 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
                           payments.map((payment: any) => (
                             <TableRow key={payment.id}>
                               <TableCell>
-                                {payment.registrations?.profiles ? (
-                                  <div>
-                                    <div className="font-medium">{payment.registrations.profiles.full_name}</div>
-                                    <div className="text-xs text-muted-foreground">{payment.registrations.profiles.email}</div>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground">Unknown</span>
-                                )}
+                                <div>
+                                  <div className="font-medium">{payment.user_name}</div>
+                                  <div className="text-xs text-muted-foreground">{payment.user_email}</div>
+                                </div>
                               </TableCell>
-                              <TableCell>{payment.registrations?.events?.title || 'N/A'}</TableCell>
+                              <TableCell>{payment.event_title}</TableCell>
                               <TableCell>
-                                {payment.tickets?.ticket_code ? (
-                                  <span className="font-mono text-xs">{payment.tickets.ticket_code}</span>
-                                ) : (
-                                  <span className="text-muted-foreground text-xs">-</span>
-                                )}
+                                <span className="font-mono text-xs">{payment.ticket_code}</span>
                               </TableCell>
                               <TableCell className="font-bold text-green-600">₹{payment.amount}</TableCell>
                               <TableCell>
