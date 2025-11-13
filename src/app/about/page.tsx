@@ -107,62 +107,64 @@ export default function AboutPage() {
           </div>
           
           {/* Lead Developer Card - Highlighted */}
-          <div className="max-w-md mx-auto mb-16">
-            <Card className="relative glass p-10 text-center group hover:scale-105 transition-all duration-300 border-2 border-purple-500/50 shadow-2xl overflow-hidden">
-              {/* Animated background gradient */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-violet-600/20 to-indigo-600/20 animate-pulse" />
+          <div className="max-w-lg mx-auto mb-16">
+            <Card className="relative glass p-12 text-center group hover:scale-[1.02] transition-all duration-300 border-2 border-gradient-to-r from-purple-500 via-violet-500 to-indigo-500 shadow-2xl overflow-hidden">
+              {/* Animated background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-violet-500/10 to-indigo-500/10" />
               
-              {/* Glow effects */}
-              <div className="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/30 rounded-full blur-3xl" />
-              <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-indigo-500/30 rounded-full blur-3xl" />
+              {/* Subtle glow effects */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent" />
               
               {/* Content */}
               <div className="relative z-10">
-                {/* Premium badge */}
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-                  <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white text-xs font-bold shadow-lg flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    <span>HEAD PROJECT DEVELOPER</span>
-                    <Sparkles className="h-3 w-3" />
-                  </div>
+                {/* Badge */}
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold shadow-lg mb-6">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>HEAD PROJECT DEVELOPER</span>
                 </div>
                 
-                <div className="h-32 w-32 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 flex items-center justify-center text-5xl font-bold text-white mx-auto mb-6 glow-lg group-hover:scale-110 transition-transform shadow-2xl ring-4 ring-purple-500/50 ring-offset-4 ring-offset-background">
+                {/* Avatar */}
+                <div className="h-32 w-32 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 flex items-center justify-center text-5xl font-bold text-white mx-auto mb-6 shadow-2xl ring-4 ring-purple-500/30 group-hover:ring-purple-500/50 transition-all">
                   SS
                 </div>
                 
-                <h3 className="text-2xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                {/* Name */}
+                <h3 className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
                   Sachin S
                 </h3>
                 
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/30 mb-4">
-                  <div className="h-2 w-2 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 animate-pulse" />
-                  <p className="text-base font-bold bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                    Head Project Developer
-                  </p>
-                </div>
+                {/* Role */}
+                <p className="text-lg font-semibold text-purple-600 dark:text-purple-400 mb-3">
+                  Head Project Developer
+                </p>
                 
-                <p className="text-sm text-muted-foreground italic">
-                  "Leading the vision and architecture of Festify"
+                {/* Quote */}
+                <p className="text-sm text-muted-foreground italic max-w-sm mx-auto">
+                  Leading the vision and architecture of Festify
                 </p>
               </div>
             </Card>
           </div>
           
           {/* Team Members Grid */}
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {[
-              { name: "Rishika Raj", id: "RA2411030010059", role: "Full Stack Developer", color: "from-pink-500 to-rose-600", initials: "RR" },
-              { name: "Allan Roy", id: "RA2411030010028", role: "Full Stack Developer", color: "from-purple-500 to-violet-600", initials: "AR" },
-              { name: "Shreya Sunil", id: "RA2411030010048", role: "Full Stack Developer", color: "from-indigo-500 to-blue-600", initials: "SS" }
+              { name: "Rishika Raj", id: "RA2411030010059", role: "Full Stack Developer", color: "from-pink-500 to-rose-600", initials: "RR", specialty: "UI/UX & Frontend" },
+              { name: "Allan Roy", id: "RA2411030010028", role: "Full Stack Developer", color: "from-purple-500 to-violet-600", initials: "AR", specialty: "Backend & APIs" },
+              { name: "Shreya Sunil", id: "RA2411030010048", role: "Full Stack Developer", color: "from-indigo-500 to-blue-600", initials: "SS", specialty: "Database & Integration" }
             ].map((member, i) => (
-              <Card key={i} className="glass p-8 text-center group hover:scale-105 transition-transform duration-300">
-                <div className={`h-24 w-24 rounded-full bg-gradient-to-br ${member.color} flex items-center justify-center text-3xl font-bold text-white mx-auto mb-4 glow-md group-hover:scale-110 transition-transform`}>
+              <Card key={i} className="glass p-8 text-center group hover:scale-105 transition-all duration-300 border border-transparent hover:border-purple-500/30 hover:shadow-xl">
+                <div className={`h-24 w-24 rounded-full bg-gradient-to-br ${member.color} flex items-center justify-center text-3xl font-bold text-white mx-auto mb-4 shadow-lg ring-2 ring-offset-2 ring-offset-background ring-${member.color.split('-')[1]}-500/30 group-hover:ring-${member.color.split('-')[1]}-500/60 group-hover:scale-110 transition-all`}>
                   {member.initials}
                 </div>
                 <h3 className="text-xl font-bold mb-1">{member.name}</h3>
-                <p className="text-sm text-muted-foreground mb-2">{member.id}</p>
-                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">{member.role}</p>
+                <p className="text-xs text-muted-foreground mb-2">{member.id}</p>
+                <div className="inline-block px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 mb-2">
+                  <p className="text-sm font-medium text-purple-600 dark:text-purple-400">{member.role}</p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  <span className="font-medium">Focus:</span> {member.specialty}
+                </p>
               </Card>
             ))}
           </div>

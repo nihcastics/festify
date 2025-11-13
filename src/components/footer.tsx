@@ -142,9 +142,14 @@ export function Footer() {
             <p className="text-white/60 text-sm">
               © {new Date().getFullYear()} Festify. All rights reserved.
             </p>
-            <p className="text-white/60 text-sm text-center md:text-right">
-              Designed & Developed by <span className="text-white font-medium">Sachin S</span>
-            </p>
+            <div className="text-white/60 text-sm text-center md:text-right">
+              <p className="mb-1">
+                Designed & Developed by <span className="text-white font-medium">Sachin S</span>
+              </p>
+              <p className="text-xs">
+                Co-Developed by <span className="text-white/80">Rishika Raj (RA2411030010059), Allan Roy (RA2411030010028) & Shreya Sunil (RA2411030010048)</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>
