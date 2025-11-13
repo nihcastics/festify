@@ -106,15 +106,59 @@ export default function AboutPage() {
             <p className="text-xl text-muted-foreground">Passionate developers building the future of college events</p>
           </div>
           
+          {/* Lead Developer Card - Highlighted */}
+          <div className="max-w-md mx-auto mb-16">
+            <Card className="relative glass p-10 text-center group hover:scale-105 transition-all duration-300 border-2 border-purple-500/50 shadow-2xl overflow-hidden">
+              {/* Animated background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-violet-600/20 to-indigo-600/20 animate-pulse" />
+              
+              {/* Glow effects */}
+              <div className="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/30 rounded-full blur-3xl" />
+              <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-indigo-500/30 rounded-full blur-3xl" />
+              
+              {/* Content */}
+              <div className="relative z-10">
+                {/* Premium badge */}
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2">
+                  <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white text-xs font-bold shadow-lg flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    <span>HEAD PROJECT DEVELOPER</span>
+                    <Sparkles className="h-3 w-3" />
+                  </div>
+                </div>
+                
+                <div className="h-32 w-32 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 flex items-center justify-center text-5xl font-bold text-white mx-auto mb-6 glow-lg group-hover:scale-110 transition-transform shadow-2xl ring-4 ring-purple-500/50 ring-offset-4 ring-offset-background">
+                  SS
+                </div>
+                
+                <h3 className="text-2xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                  Sachin S
+                </h3>
+                
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/30 mb-4">
+                  <div className="h-2 w-2 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 animate-pulse" />
+                  <p className="text-base font-bold bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                    Head Project Developer
+                  </p>
+                </div>
+                
+                <p className="text-sm text-muted-foreground italic">
+                  "Leading the vision and architecture of Festify"
+                </p>
+              </div>
+            </Card>
+          </div>
+          
+          {/* Team Members Grid */}
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
-              { name: "Rishika Raj", id: "RA2411030010059", role: "Full Stack Developer", color: "from-pink-500 to-rose-600" },
-              { name: "Allan Roy", id: "RA2411030010028", role: "Full Stack Developer", color: "from-purple-500 to-violet-600" },
-              { name: "Shreya Sunil", id: "RA2411030010048", role: "Full Stack Developer", color: "from-indigo-500 to-blue-600" }
+              { name: "Rishika Raj", id: "RA2411030010059", role: "Full Stack Developer", color: "from-pink-500 to-rose-600", initials: "RR" },
+              { name: "Allan Roy", id: "RA2411030010028", role: "Full Stack Developer", color: "from-purple-500 to-violet-600", initials: "AR" },
+              { name: "Shreya Sunil", id: "RA2411030010048", role: "Full Stack Developer", color: "from-indigo-500 to-blue-600", initials: "SS" }
             ].map((member, i) => (
               <Card key={i} className="glass p-8 text-center group hover:scale-105 transition-transform duration-300">
                 <div className={`h-24 w-24 rounded-full bg-gradient-to-br ${member.color} flex items-center justify-center text-3xl font-bold text-white mx-auto mb-4 glow-md group-hover:scale-110 transition-transform`}>
-                  {member.name.split(' ').map(n => n[0]).join('')}
+                  {member.initials}
                 </div>
                 <h3 className="text-xl font-bold mb-1">{member.name}</h3>
                 <p className="text-sm text-muted-foreground mb-2">{member.id}</p>

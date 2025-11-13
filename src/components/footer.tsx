@@ -143,7 +143,7 @@ export function Footer() {
               © {new Date().getFullYear()} Festify. All rights reserved.
             </p>
             <p className="text-white/60 text-sm text-center md:text-right">
-              Developed with 💜 by <span className="text-white font-medium">Rishika Raj</span> (RA2411030010059), <span className="text-white font-medium">Allan Roy</span> (RA2411030010028) & <span className="text-white font-medium">Shreya Sunil</span> (RA2411030010048)
+              Designed & Developed by <span className="text-white font-medium">Sachin S</span>
             </p>
           </div>
         </div>
